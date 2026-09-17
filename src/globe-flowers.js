@@ -2,7 +2,7 @@ import {demoFlowers} from './demo-flowers.js';
 import * as THREE from 'three';
 import {flowerMessage,flowerName} from './flower-messages.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-const LIMIT=29;
+const LIMIT=256;
 export function flowerPosition(id){let slot=0;for(let ring=0;ring<12;ring++){const r=1.65+ring*.65,n=24+ring*12;for(let i=0;i<n;i++){const a=i/n*Math.PI*2+.48;const x=Math.sin(a)*r,z=Math.cos(a)*r;if((Math.abs(x)<1.02&&z>-.15)||Math.hypot(x-3.4,z+1.6)<.85||r>6.4)continue;if(slot++===id)return new THREE.Vector3(x,0,z);}}return new THREE.Vector3(-2,0,-2);}
 export function initFlowers({scene,camera,onPlant,positionFor=flowerPosition,plantDelay=0,growthDuration=1500,refinedGrowth=false,palette=null,onSelect=()=>{}}){
  let immersive=false;const breezeTime={value:0},breezeAmount={value:0},insideOpacity={value:0};
@@ -58,6 +58,12 @@ export function initFlowers({scene,camera,onPlant,positionFor=flowerPosition,pla
  const outlineFlower=new THREE.Mesh(flowers[0].geometry,flowerRim);outlineFlower.visible=false;scene.add(outlineFlower);
  function syncOutline(){outlineFlower.visible=!!hovered;if(!hovered)return;flowerRim.color.set(palettes[hovered.id%6]);outlineFlower.geometry=flowers[hovered.id%6].geometry;outlineFlower.position.copy(positionFor(hovered.id));outlineFlower.rotation.set(0,hovered.id*2.4,0);outlineFlower.scale.setScalar(.95+(hovered.id%4)*.1);outlineFlower.updateMatrixWorld();}
 
+ function plant(name,message){
+  if(records.length>=LIMIT)throw new Error('This little garden is full.');
+  const rec={id:records.length,name:name.trim().slice(0,24)||'A friend',message:message.trim().slice(0,240),date:new Date().toISOString(),authored:true};
+  if(!rec.message)throw new Error('Please leave a few words for Kiki.');
+  records.push(rec);animation={id:rec.id,start:performance.now()+plantDelay};if(refinedGrowth)createGrowth(rec);draw(0);return rec;
+ }
  function hoverAt(pointer){
   scene.updateWorldMatrix(true,true);camera.updateMatrixWorld();hoverRay.setFromCamera(pointer,camera);
   const hit=hoverRay.intersectObjects(flowers,false)[0];
@@ -66,7 +72,7 @@ export function initFlowers({scene,camera,onPlant,positionFor=flowerPosition,pla
   if(!hovered){let nearest=32;const tip=new THREE.Vector3();for(const rec of records){tip.copy(positionFor(rec.id));tip.y+=.485*(.95+(rec.id%4)*.1);scene.localToWorld(tip);tip.project(camera);if(tip.z < -1 || tip.z > 1)continue;const distance=Math.hypot((tip.x-pointer.x)*innerWidth/2,(tip.y-pointer.y)*innerHeight/2);if(distance<nearest){nearest=distance;hovered=rec;}}}
   syncOutline();return hovered;
  }
- return {getOutline:()=>{syncOutline();return hovered?outlineFlower:null;},getHoverColor:()=>palettes[hovered?.id%6||0],hoverAt,clearHover:()=>{hovered=null;outlineFlower.visible=false;},getHovered:()=>hovered,clearSelection:()=>{selected=null;hovered=null;outlineFlower.visible=false;},getRecords:()=>records.map(r=>({...r})),setImmersive:value=>{insideOpacity.value=Number(value);immersive=value>.5;const transparent=value>.001;if(stemMat.transparent!==transparent){stemMat.transparent=transparent;stemMat.depthWrite=!transparent;stemMat.needsUpdate=true;}},setDetail:value=>{detail=value;},get blocked(){return false;},update(now,entered){breezeTime.value=now*.001;breezeAmount.value=immersive&&!matchMedia('(prefers-reduced-motion: reduce)').matches?1:0;const activeRecord=hovered||selected;
+ return {plant,getOutline:()=>{syncOutline();return hovered?outlineFlower:null;},getHoverColor:()=>palettes[hovered?.id%6||0],hoverAt,clearHover:()=>{hovered=null;outlineFlower.visible=false;},getHovered:()=>hovered,clearSelection:()=>{selected=null;hovered=null;outlineFlower.visible=false;},getRecords:()=>records.map(r=>({...r})),setImmersive:value=>{insideOpacity.value=Number(value);immersive=value>.5;const transparent=value>.001;if(stemMat.transparent!==transparent){stemMat.transparent=transparent;stemMat.depthWrite=!transparent;stemMat.needsUpdate=true;}},setDetail:value=>{detail=value;},get blocked(){return false;},update(now,entered){breezeTime.value=now*.001;breezeAmount.value=immersive&&!matchMedia('(prefers-reduced-motion: reduce)').matches?1:0;const activeRecord=hovered||selected;
  flowers.forEach((flower,species)=>{const glow=flower.geometry.attributes.instanceGlow;glow.array.fill(0);if(immersive)instanceRecords[species].forEach((rec,i)=>glow.setX(i,.12+.5*Math.pow(Math.max(0,Math.sin(now*.0007+rec.id*2.399)),6)));if(activeRecord&&detail){const index=instanceRecords[species].findIndex(rec=>rec.id===activeRecord.id);if(index>=0)glow.setX(index,1);}glow.needsUpdate=true;});
  for(const [id,bubble] of bubbles){const p=positionFor(id),active=activeRecord?.id===id;bubble.visible=false&&detail&&(active||id>=records.length-12)&&!(animation?.id===id&&now<animation.start+growthDuration*.85);const bob=matchMedia('(prefers-reduced-motion: reduce)').matches?0:Math.sin(now*.0018+id)*.025;bubble.position.set(p.x,p.y+.78+(id%4)*.047+bob,p.z);bubble.material.opacity=active?1:.94;bubble.material.color.set(palettes[id%6]);if(active)bubble.material.color.lerp(new THREE.Color('#ffffff'),.12);bubble.scale.setScalar(active?.25:.20);}
  if(animation){const t=Math.max(0,Math.min(1,(now-animation.start)/growthDuration));if(refinedGrowth)grow(t);else draw(1-Math.pow(1-t,3));if(t===1){animation=null;if(growing){scene.remove(growing);growing.geometry.dispose();growing=null;}draw();}}}};

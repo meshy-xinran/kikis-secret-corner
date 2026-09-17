@@ -15,7 +15,7 @@ Asset reduction: 95.8%
 
 ## Verification
 
-Production build succeeds. Tested at a nested URL matching GitHub Pages project hosting: desk → close-up → inside; sculpture and props load, existing 29 messages display. No submission form or browser persistence remains.
+Production build succeeds. Tested at a nested URL matching GitHub Pages project hosting: desk → close-up → inside; sculpture and props load, existing 29 messages display. The offering form is enabled. New offerings are in memory only; refresh restores the 29 fixed demo messages.
 
 ## Largest published files
 

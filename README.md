@@ -1,12 +1,13 @@
 # Kiki’s Secret Corner — public demo
 
-A static, read-only memorial demo. The original editing project is separate and unchanged.
+A static memorial demo with temporary visitor offerings. The original editing project is separate and unchanged.
 
 ## Included
 
 - Desk, globe close-up, and inside-the-globe scenes.
 - 29 fixed flowers and the messages visible in the original Chrome demo.
-- No form, new submissions, localStorage, backend, API credentials, or generation services.
+- Visitors can write a name/message and leave a bouquet, including snow and flower-growth animations. New offerings stay in memory until refresh; they are never sent to a server.
+- No localStorage, backend, API credentials, or generation services.
 - Comico / Switzer, ambient music loop, rain, hover interactions and camera transitions.
 
 ## Publish with GitHub Desktop (no build required)
@@ -35,4 +36,4 @@ The app uses no external API keys.
 
 ## Scope
 
-This is a desktop-first WebGL demo. Download size is reduced; the sculpture still retains its original triangle count, so lower-end/mobile GPUs may remain slower. Visitor messages cannot be submitted in this version.
+This is a desktop-first WebGL demo. Download size is reduced; the sculpture still retains its original triangle count, so lower-end/mobile GPUs may remain slower. Visitor messages are temporary: refreshing restores the original 29 demo flowers.
