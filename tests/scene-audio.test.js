@@ -22,7 +22,7 @@ test('music starts without waiting for rain, and failed playback can retry the s
   createSceneAudio();button.onclick();
   assert.deepEqual(events,['graph','resume','play']);
   await flush();assert.equal(button.textContent,'♫ Sound on');assert.ok(events.includes('rain'));
-  button.onclick();assert.equal(button.textContent,'♫ Sound off');
+  button.onclick();assert.equal(button.textContent,'♫ Enable sound — highly recommended');
   rejectPlay=true;button.onclick();await flush();assert.equal(button.textContent,'♫ Tap to retry sound');
   rejectPlay=false;button.onclick();await flush();assert.equal(button.textContent,'♫ Sound on');
   assert.equal(contexts,1);assert.equal(plays,3);
