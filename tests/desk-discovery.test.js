@@ -15,15 +15,16 @@ test('discovery handles unavailable objects without leaving a stale target',()=>
  assert.equal(cue.update(.1,['bed']),null);
 });
 
-test('a hint draws its outline before fading and the next hint starts within 2.4 seconds',()=>{
- const cue=createDeskDiscovery(()=>.5);let previous=0,completed=false,first=null,changed=false;
- for(let i=0;i<27;i++){
+test('a whole-outline hint brightens, blinks once, and fades before the next object',()=>{
+ const cue=createDeskDiscovery(()=>.5),samples=[];let next=false;
+ for(let i=0;i<40;i++){
   const state=cue.update(.1,['globe','bed']);
-  if(!state)continue;
-  if(!first)first=state.id;
-  if(state.id!==first){changed=true;break;}
-  assert.ok(state.progress>=previous);previous=state.progress;
-  if(state.progress===1)completed=true;
+  if(state?.id==='bed'){next=true;break;}
+  if(state?.id==='globe')samples.push(state.amount);
  }
- assert.equal(completed,true);assert.equal(changed,true);
+ assert.ok(samples[4]>.95); // Initial full brightness.
+ assert.ok(samples[10]<samples[7]-.25); // One soft dip.
+ assert.ok(samples[13]>samples[10]+.25); // Bright again.
+ assert.ok(samples.at(-1)<.05); // Fade to dark before switching.
+ assert.equal(next,true);
 });

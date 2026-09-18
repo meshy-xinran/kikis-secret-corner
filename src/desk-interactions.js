@@ -23,31 +23,6 @@ export function createDeskInteractions({scene,camera,composer,globe,glass,render
  const outline=new OutlinePass(new THREE.Vector2(innerWidth,innerHeight),scene,camera);
  outline.visibleEdgeColor.set('#d6eca0');outline.hiddenEdgeColor.set('#000000');outline.edgeStrength=3;outline.edgeGlow=.7;outline.edgeThickness=1.5;outline.pulsePeriod=0;
  composer.insertPass(outline,1);
- // Reveal the existing silhouette clockwise from its top, without a second pass.
- const trace={progress:{value:1},center:{value:new THREE.Vector2(.5,.5)},aspect:{value:1}};
- Object.assign(outline.overlayMaterial.uniforms,{traceProgress:trace.progress,traceCenter:trace.center,traceAspect:trace.aspect});
- outline.overlayMaterial.fragmentShader=outline.overlayMaterial.fragmentShader
-  .replace('uniform bool usePatternTexture;',`uniform bool usePatternTexture;
-   uniform float traceProgress;
-   uniform vec2 traceCenter;
-   uniform float traceAspect;`)
-  .replace('gl_FragColor = finalColor;',`if(traceProgress < 1.0){
-   vec2 delta=(vUv-traceCenter)*vec2(traceAspect,1.0);
-   float angle=mod(atan(delta.x,delta.y)+6.28318530718,6.28318530718)/6.28318530718;
-   float reveal=1.0-smoothstep(traceProgress-.015,traceProgress,angle);
-   float tip=(1.0-smoothstep(.0,.035,abs(angle-traceProgress)))*reveal;
-   finalColor*=reveal*(1.0+.5*tip);
-  }
-  gl_FragColor = finalColor;`);
- const traceBounds=new THREE.Box3(),tracePoint=new THREE.Vector3();
- function setTrace(object,progress=1){
-  trace.progress.value=progress;
-  if(progress>=1||!object)return;
-  camera.updateMatrixWorld();traceBounds.setFromObject(object).getCenter(tracePoint);tracePoint.project(camera);
-  trace.center.value.set(tracePoint.x*.5+.5,tracePoint.y*.5+.5);
-  trace.aspect.value=renderer.domElement.clientWidth/Math.max(1,renderer.domElement.clientHeight);
- }
-
  const title=document.createElement('h1');title.className='desk-title';title.textContent='Kiki’s Secret Corner';document.body.append(title);
  const dates=document.createElement('p');dates.className='desk-dates';dates.textContent='May 2012 — August 2026';document.body.append(dates);
  const caption=document.createElement('div');caption.className='desk-memory';caption.setAttribute('role','status');caption.setAttribute('aria-live','polite');caption.innerHTML='<span class="desk-memory-name"></span><p></p>';document.body.append(caption);
@@ -74,7 +49,7 @@ export function createDeskInteractions({scene,camera,composer,globe,glass,render
   if(!id||!memories[id]){clear();return null;}
   if(hovered!==id){hovered=id;caption.classList.toggle('globe-invitation',id==='globe');captionName.textContent=id==='globe'?'':memories[id][0];captionStory.textContent=memories[id][1];caption.classList.add('visible');}
   outline.selectedObjects=id==='globe'?[glass]:[root];outline.edgeStrength=id==='globe'?5:3;
-  discovery.reset();setTrace(null);outline.edgeGlow=.7;outline.edgeThickness=1.5;
+  discovery.reset();outline.edgeGlow=.7;outline.edgeThickness=1.5;
   renderer.domElement.style.cursor=id==='globe'?'pointer':'default';
   return id;
  }
@@ -84,19 +59,18 @@ export function createDeskInteractions({scene,camera,composer,globe,glass,render
  renderer.domElement.addEventListener('pointerdown',e=>{press={x:e.clientX,y:e.clientY,id:pick(e)};});
  renderer.domElement.addEventListener('pointerup',e=>{if(press?.id==='globe'&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<6&&enabled){clear();onEnter();}press=null;});
  renderer.domElement.addEventListener('pointercancel',()=>{press=null;clear();});
- return {setFocusOutline(object,color){setTrace(null);outline.selectedObjects=object?[object]:[];outline.visibleEdgeColor.set(color||'#c3e890');outline.hiddenEdgeColor.set(color||'#c3e890');outline.edgeGlow=1.1;outline.edgeStrength=4.5;},update(dt,isDesk){
-  if(enabled&&!isDesk)clear();enabled=isDesk;setTrace(null);
+ return {setFocusOutline(object,color){outline.selectedObjects=object?[object]:[];outline.visibleEdgeColor.set(color||'#c3e890');outline.hiddenEdgeColor.set(color||'#c3e890');outline.edgeGlow=1.1;outline.edgeStrength=4.5;},update(dt,isDesk){
+  if(enabled&&!isDesk)clear();enabled=isDesk;
   if(isDesk){
    outline.visibleEdgeColor.set('#d6eca0');outline.hiddenEdgeColor.set('#000000');
    if(!hovered){
     const roots=scene.children.filter(o=>o.visible&&memories[o.userData.memoryKey]);
     const ids=roots.map(o=>o.userData.memoryKey);
     if(!ids.includes('globe'))ids.push('globe');
-    const cue=press?null:reducedMotion.matches?{id:'globe',amount:.3,progress:1}:discovery.update(dt,ids);
+    const cue=press?null:reducedMotion.matches?{id:'globe',amount:.3}:discovery.update(dt,ids);
     const object=cue?.id==='globe'?glass:roots.find(o=>o.userData.memoryKey===cue?.id);
     outline.selectedObjects=object?[object]:[];
     outline.edgeStrength=cue?cue.amount*3.2:0;outline.edgeGlow=.75;outline.edgeThickness=1.5;
-    setTrace(object,cue?.progress??1);
    }
   }
   dates.hidden=!isDesk;title.classList.toggle('hidden',!isDesk);title.setAttribute('aria-hidden',String(!isDesk));caption.hidden=!isDesk;
