@@ -22,3 +22,8 @@ html.portrait-blocked{background:#17241f}
 html,body{background:#121413;min-width:100%;min-height:100%;padding:0}
 #garden{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;overflow:hidden}
 #garden>canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important}
+
+/* Long presses should interact with the scene, not select its labels. */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+canvas,img{-webkit-user-drag:none}
