@@ -88,3 +88,12 @@
 }
 .flower-message{overflow-wrap:anywhere}
 .plant-submit:disabled{opacity:.6;cursor:wait}
+
+/* A quiet, occasional highlight invites visitors to enable the ambient mix. */
+.sound-toggle{overflow:hidden;isolation:isolate;white-space:pre-line;line-height:1.4}
+.sound-toggle[data-recommend="true"]{background:linear-gradient(120deg,#344d40ed,#596246e8);border-color:#d4e5a880;box-shadow:0 0 18px #d4e5a81c}
+.sound-toggle[data-recommend="true"]::before{content:"";position:absolute;inset:-40% -60%;z-index:-1;pointer-events:none;background:linear-gradient(110deg,transparent 40%,#edf7c842 50%,transparent 60%);transform:translateX(-100%);animation:sound-shimmer 6s ease-in-out infinite}
+@keyframes sound-shimmer{0%,68%{transform:translateX(-100%)}92%,100%{transform:translateX(100%)}}
+@media (hover:hover) and (pointer:fine){.sound-toggle{font-size:16px;padding:12px 22px;border-radius:28px;min-height:48px}}
+@media (any-pointer:coarse) and (max-height:600px) and (orientation:landscape){.sound-toggle{max-width:27vw}}
+@media (prefers-reduced-motion:reduce){.sound-toggle[data-recommend="true"]::before{animation:none;display:none}}
