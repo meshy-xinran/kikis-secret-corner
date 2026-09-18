@@ -59,3 +59,32 @@
 
 .desk-memory.globe-invitation{top:88%;width:min(760px,88vw);font:400 clamp(18px,1.7vw,29px)/1.35 Comico,cursive;color:#f0eddb;letter-spacing:.015em}
 @media(max-width:600px){.desk-memory.globe-invitation{top:86%;font-size:17px;width:88vw}}
+
+/* Phone landscape: use height as well as width, since phones are wide when rotated. */
+@media (any-pointer:coarse) and (max-height:600px) and (orientation:landscape){
+ .desk-title{top:24%;width:88%;font-size:clamp(24px,4vw,38px);line-height:1.2}
+ .desk-dates{top:calc(24% + 27px);font-size:9px;letter-spacing:.02em;white-space:nowrap}
+ .desk-memory{top:79%;width:70vw;font-size:11px;line-height:1.3}
+ .desk-memory-name{font-size:10px;margin-bottom:3px}
+ .desk-memory.globe-invitation{top:81%;font-size:clamp(12px,2vw,17px);width:75vw}
+ .flower-message{width:125px;max-width:26vw;overflow-wrap:anywhere;line-height:1.25}
+ .flower-message.closeup-message{width:min(430px,65vw);max-width:65vw;font-size:clamp(13px,2vw,17px);padding:8px 12px;line-height:1.3;max-height:35dvh;overflow:auto;pointer-events:auto}
+ .flower-message.closeup-message .message-author{font-size:.95em;margin-bottom:4px}
+ .leave-flowers{bottom:max(12px,env(safe-area-inset-bottom));font-size:12px;padding:5px 14px;gap:7px;min-height:44px}
+ .leave-flowers svg{width:30px;height:30px}
+ .scene-return{right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));gap:2px}
+ .scene-return button{font-size:10px;min-height:40px;max-width:24vw}
+ .sound-toggle{left:max(12px,env(safe-area-inset-left));bottom:max(8px,env(safe-area-inset-bottom));font-size:10px;min-height:40px;padding:7px 10px}
+ .cat-invitation{top:20%;font-size:16px;line-height:1.3;padding:8px}.cat-invitation span{font-size:18px}
+ .flower-dialog{width:min(540px,calc(100vw - 64px));max-height:calc(100dvh - 16px);padding:16px 24px;margin:auto;overflow-y:auto;overscroll-behavior:contain;border-radius:16px}
+ .flower-dialog h2{font-size:20px;margin:0 30px 5px 0}
+ .flower-dialog p{font-size:12px;margin-bottom:8px}
+ .flower-dialog label{font-size:12px;margin:8px 0}
+ .flower-dialog input,.flower-dialog textarea{font-size:16px;line-height:1.3;padding:8px;margin-top:4px}
+ .flower-dialog textarea{height:68px;min-height:56px}
+ .flower-dialog small{font-size:10px;margin-top:7px}
+ .plant-submit{font-size:13px;padding:10px;min-height:42px}
+ .dialog-close{min-width:44px;min-height:44px;top:2px;right:4px}
+}
+.flower-message{overflow-wrap:anywhere}
+.plant-submit:disabled{opacity:.6;cursor:wait}

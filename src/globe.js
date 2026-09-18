@@ -163,7 +163,7 @@ function updateMessageSky(t){
   node.style.left=((messageAnchor.x*.5+.5)*innerWidth)+'px';
   node.style.top=((-messageAnchor.y*.5+.5)*innerHeight)+'px';
   node.style.opacity=String(!inside?.96:reduced?.8:.2+.65*Math.pow(.5+.5*Math.sin(t*.7+rec.id*2.399),2));
-  node.style.fontSize=THREE.MathUtils.clamp(15/Math.sqrt(Math.max(.4,-messageView.z)),12,17)+'px';
+  node.style.fontSize=(matchMedia('(any-pointer:coarse) and (max-height:600px)').matches?THREE.MathUtils.clamp(12/Math.sqrt(Math.max(.4,-messageView.z)),10,13):THREE.MathUtils.clamp(15/Math.sqrt(Math.max(.4,-messageView.z)),12,17))+'px';
  }
 }
 

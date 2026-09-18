@@ -4,3 +4,16 @@
 #loading-scene{position:absolute;z-index:5;inset:0;display:grid;place-items:center;background:#172019;color:#d4ddc5;font-size:15px;letter-spacing:.15em}footer a{color:inherit}footer span{max-width:75%;font-size:9px;line-height:1.7}#intro{top:10%}#views{z-index:2}@media(max-width:600px){#views{gap:10px;font-size:9px}footer span{max-width:70%;font-size:8px}}
 
 #forest-lighting{position:absolute;right:28px;top:26px;z-index:3;display:flex;align-items:center;gap:10px;font:11px system-ui;color:#fff7e8}#forest-lighting select{font:12px system-ui;color:#fff7e8;background:#354437dc;border:1px solid #eee5c850;border-radius:18px;padding:8px 12px;max-width:175px}#forest-lighting select:disabled{opacity:.6}@media(max-width:700px){#forest-lighting{top:57px;right:18px}}
+
+/* Available before the 3D scene loads, including the portrait entry screen. */
+@font-face{font-family:Comico;src:url('./public/assets/fonts/comico-regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap}
+#orientation-gate{position:fixed;inset:0;margin:0;width:100%;max-width:none;height:100%;height:100dvh;max-height:none;border:0;border-radius:0;padding:max(28px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));background:radial-gradient(ellipse at 50% 35%,#34453c,#17241f 75%);color:#f4edce;text-align:center;overflow:auto}
+#orientation-gate[open]{display:grid;place-items:center}
+#orientation-gate::backdrop{background:#17241f}
+.rotate-content{width:min(100%,350px)}
+.rotate-content svg{width:100px;height:90px;fill:none;stroke:#d5e5bd;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;margin-bottom:24px}
+#orientation-gate h1{font:400 clamp(25px,7vw,34px)/1.45 Comico,cursive;letter-spacing:0;margin:0 0 24px}
+#orientation-gate p{font:400 18px/1.7 Comico,cursive;color:#dbe4c9;margin:0}
+#orientation-gate small{display:block;font:400 12px/1.6 Comico,cursive;color:#aebca9;margin-top:30px}
+html.portrait-blocked{background:#17241f}
+#orientation-gate:focus{outline:none}
