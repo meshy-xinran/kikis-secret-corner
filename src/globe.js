@@ -22,9 +22,11 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.body.classList.add('globe-mode');document.title='Kiki’s Secret Corner';
 const loading=document.querySelector('#loading-scene');loading.hidden=false;loading.textContent='Opening your little world…';
 const scene=new THREE.Scene();scene.background=new THREE.Color('#292b38');scene.fog=new THREE.FogExp2('#34313b',.022);
-const camera=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,.05,100);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(innerWidth,innerHeight);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.querySelector('#garden').append(renderer.domElement);
-const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.22,.8,.82);
+const sceneHost=document.querySelector('#garden');
+const viewport={width:sceneHost.clientWidth,height:sceneHost.clientHeight};
+const camera=new THREE.PerspectiveCamera(32,viewport.width/viewport.height,.05,100);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.setSize(viewport.width,viewport.height,false);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;sceneHost.append(renderer.domElement);
+const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));const bloom=new UnrealBloomPass(new THREE.Vector2(viewport.width,viewport.height),.22,.8,.82);
 // Keep invalid HDR samples out of the multi-resolution bloom blur. A single
 // NaN otherwise spreads into a large rectangular patch across its mip levels.
 const finiteHDR=new ShaderPass({uniforms:{tDiffuse:{value:null}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`
@@ -42,7 +44,7 @@ void main(){
  }
  gl_FragColor=vec4(clamp(c.rgb,vec3(0.),vec3(8192.)),clamp(c.a,0.,1.));
 }`});composer.addPass(finiteHDR);composer.addPass(bloom);
-const softFocus=new ShaderPass({uniforms:{tDiffuse:{value:null},uPixel:{value:new THREE.Vector2(1/innerWidth,1/innerHeight)}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 uPixel;varying vec2 vUv;void main(){float edge=smoothstep(.24,.65,length((vUv-vec2(.5,.5))*vec2(1.,.8)));vec2 d=uPixel*edge*4.;vec4 c=texture2D(tDiffuse,vUv)*.28;c+=(texture2D(tDiffuse,vUv+vec2(d.x,0.))+texture2D(tDiffuse,vUv-vec2(d.x,0.))+texture2D(tDiffuse,vUv+vec2(0.,d.y))+texture2D(tDiffuse,vUv-vec2(0.,d.y)))*.12;c+=(texture2D(tDiffuse,vUv+d)+texture2D(tDiffuse,vUv-d)+texture2D(tDiffuse,vUv+vec2(d.x,-d.y))+texture2D(tDiffuse,vUv+vec2(-d.x,d.y)))*.06;gl_FragColor=c;}`});composer.addPass(softFocus);composer.addPass(new OutputPass());
+const softFocus=new ShaderPass({uniforms:{tDiffuse:{value:null},uPixel:{value:new THREE.Vector2(1/viewport.width,1/viewport.height)}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D tDiffuse;uniform vec2 uPixel;varying vec2 vUv;void main(){float edge=smoothstep(.24,.65,length((vUv-vec2(.5,.5))*vec2(1.,.8)));vec2 d=uPixel*edge*4.;vec4 c=texture2D(tDiffuse,vUv)*.28;c+=(texture2D(tDiffuse,vUv+vec2(d.x,0.))+texture2D(tDiffuse,vUv-vec2(d.x,0.))+texture2D(tDiffuse,vUv+vec2(0.,d.y))+texture2D(tDiffuse,vUv-vec2(0.,d.y)))*.12;c+=(texture2D(tDiffuse,vUv+d)+texture2D(tDiffuse,vUv-d)+texture2D(tDiffuse,vUv+vec2(d.x,-d.y))+texture2D(tDiffuse,vUv+vec2(-d.x,d.y)))*.06;gl_FragColor=c;}`});composer.addPass(softFocus);composer.addPass(new OutputPass());
 function material(color,roughness=.65,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness});}
 function mesh(geo,mat,pos,parent=scene){const obj=new THREE.Mesh(geo,mat);obj.position.set(...pos);obj.castShadow=true;obj.receiveShadow=true;parent.add(obj);return obj;}
 function canvasTexture(w,h,paint){const c=document.createElement('canvas');c.width=w;c.height=h;paint(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;}
@@ -160,8 +162,8 @@ function updateMessageSky(t){
   const visible=messageView.z<0&&messageAnchor.z>-1&&messageAnchor.z<1&&Math.abs(messageAnchor.x)<1.15&&Math.abs(messageAnchor.y)<1.12;
   node.hidden=!visible||(!inside&&hover?.id!==rec.id);
   if(!visible)continue;
-  node.style.left=((messageAnchor.x*.5+.5)*innerWidth)+'px';
-  node.style.top=((-messageAnchor.y*.5+.5)*innerHeight)+'px';
+  node.style.left=((messageAnchor.x*.5+.5)*viewport.width)+'px';
+  node.style.top=((-messageAnchor.y*.5+.5)*viewport.height)+'px';
   node.style.opacity=String(!inside?.96:reduced?.8:.2+.65*Math.pow(.5+.5*Math.sin(t*.7+rec.id*2.399),2));
   node.style.fontSize=(matchMedia('(any-pointer:coarse) and (max-height:600px)').matches?THREE.MathUtils.clamp(12/Math.sqrt(Math.max(.4,-messageView.z)),10,13):THREE.MathUtils.clamp(15/Math.sqrt(Math.max(.4,-messageView.z)),12,17))+'px';
  }
@@ -171,9 +173,9 @@ const clock=new THREE.Clock(),look=new THREE.Vector3();const ease=t=>t*t*(3-2*t)
 function animate(now){requestAnimationFrame(animate);if(document.hidden)return;const dt=Math.min(clock.getDelta(),.05),t=now/1000;let zoom=0,phase='idle',elapsed=-1;
  if(ritualStart>=0){elapsed=(now-ritualStart)/1000;if(elapsed<2.6){zoom=ease(elapsed/2.6);phase='approach';}else if(elapsed<15.5){zoom=1;phase=elapsed<6?'snow':elapsed<9.4?'flower':elapsed<13.5?'glow':'quiet';}else if(elapsed<20){zoom=1-ease((elapsed-15.5)/4.5);phase='return';}else{ritualStart=-1;elapsed=-1;}}
  const particleOpacity=0;
- near=THREE.MathUtils.damp(near,(reading||inside)?1:0,2.2,dt);const focus=reduced?near:Math.max(near,zoom);const aspect=innerWidth/innerHeight,portrait=aspect<1;const distance=THREE.MathUtils.lerp(portrait?28:17.5,portrait?8.2:5.7,focus);
+ near=THREE.MathUtils.damp(near,(reading||inside)?1:0,2.2,dt);const focus=reduced?near:Math.max(near,zoom);const aspect=viewport.width/viewport.height,portrait=aspect<1;const distance=THREE.MathUtils.lerp(portrait?28:17.5,portrait?8.2:5.7,focus);
  const targetY=THREE.MathUtils.lerp(.78,1.15,focus);const eyeY=THREE.MathUtils.lerp(.78,7.0,focus);
- camera.setViewOffset(innerWidth,innerHeight,0,-innerHeight*.27*(1-focus),innerWidth,innerHeight);
+ camera.setViewOffset(viewport.width,viewport.height,0,-viewport.height*.27*(1-focus),viewport.width,viewport.height);
  windowPan=THREE.MathUtils.damp(windowPan,reading?0:windowPanTarget,2,dt);lastFocus=focus;const angle=THREE.MathUtils.clamp(yaw+windowPan,-yawLimit,yawLimit)+orbitYaw*focus;camera.position.set(Math.sin(angle)*distance,eyeY+pitch*distance*focus,Math.cos(angle)*distance);look.set(0,targetY,0);camera.lookAt(look);camera.fov=inside?78:32;if(inside){camera.clearViewOffset();camera.position.set(Math.sin(insideYaw)*1.14,1.08,Math.cos(insideYaw)*1.14);camera.lookAt(0,1.72+insidePitch,-.09);}if(travel){const progress=reduced?1:Math.min(1,(now-travel.start)/2400),blend=ease(progress);const endPosition=camera.position.clone(),endQuaternion=camera.quaternion.clone();camera.position.lerpVectors(travel.position,endPosition,blend);camera.lookAt(travel.look.clone().lerp(new THREE.Vector3(0,inside?1.72+insidePitch:targetY,inside?-.09:0),blend));camera.fov=THREE.MathUtils.lerp(travel.fov,camera.fov,blend);interior.blend(inside?blend:1-blend);if(progress===1)travel=null;}
  if(offeringShot){const shot=offeringShot,age=t-shot.start,difference=Math.atan2(Math.sin(shot.targetAngle-shot.angle),Math.cos(shot.targetAngle-shot.angle)),progress=ease(Math.min(1,age/2.4)),a=shot.angle+difference*progress;
   const destination=new THREE.Vector3(Math.sin(a)*4.7,5.8,Math.cos(a)*4.7);const returnMix=THREE.MathUtils.smoothstep(age,8,10.5);
@@ -186,4 +188,16 @@ function animate(now){requestAnimationFrame(animate);if(document.hidden)return;c
  const warmth=0;const stageAmount=stage.update(Math.max(near,zoom),warmth);rainUniforms.uTime.value=reduced?0:t;rainUniforms.uAmount.value=inside?0:near;key.map=near>.45?softLeafMap:leafPattern;const deskWeather=deskUI.update(dt,!reading&&!inside&&!travel&&near<.1);key.intensity*=1-deskWeather*.35;if(reading&&!inside)backdrops.setOvercast(near);globeUI.update(reading&&!inside&&!travel,inside&&!travel,!!offeringShot);snow.update(offeringShot?t-offeringShot.start:-1,reduced);audio.setMode(inside?'inside':reading?'focus':'desk');audio.setHoverRain(deskWeather);focusShade.style.opacity=String(near*(1-interior.amount));backdrops.update(t,reduced);interior.update(t,reduced);updateMessageSky(t);composer.render();if(frames++%30===0)document.querySelector('#garden').dataset.stats=JSON.stringify({mode:inside?'inside-globe':'globe',phase,stage:stageAmount,snowOpacity:particleOpacity,glassWarmth:warmth,orbitDegrees:THREE.MathUtils.radToDeg(orbitYaw),yawDegrees:THREE.MathUtils.radToDeg(yaw),camera:camera.position.toArray()});
 }
 loading.hidden=true;requestAnimationFrame(animate);
-window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);softFocus.uniforms.uPixel.value.set(1/innerWidth,1/innerHeight);});
+function resizeScene(){
+ const width=Math.max(1,sceneHost.clientWidth),height=Math.max(1,sceneHost.clientHeight);
+ if(width===viewport.width&&height===viewport.height)return;
+ viewport.width=width;viewport.height=height;
+ camera.aspect=width/height;camera.updateProjectionMatrix();
+ renderer.setSize(width,height,false);composer.setSize(width,height);
+ softFocus.uniforms.uPixel.value.set(1/width,1/height);
+}
+new ResizeObserver(resizeScene).observe(sceneHost);
+window.addEventListener('resize',resizeScene);
+window.visualViewport?.addEventListener('resize',resizeScene);
+window.addEventListener('orientationchange',()=>{requestAnimationFrame(resizeScene);setTimeout(resizeScene,250);});
+resizeScene();

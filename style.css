@@ -17,3 +17,8 @@
 #orientation-gate small{display:block;font:400 12px/1.6 Comico,cursive;color:#aebca9;margin-top:30px}
 html.portrait-blocked{background:#17241f}
 #orientation-gate:focus{outline:none}
+
+/* Let the scene occupy the full viewport; safe-area padding belongs on controls only. */
+html,body{background:#121413;min-width:100%;min-height:100%;padding:0}
+#garden{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;max-width:none;overflow:hidden}
+#garden>canvas{position:absolute;inset:0;display:block;width:100%!important;height:100%!important}
