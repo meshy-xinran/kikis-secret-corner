@@ -1,8 +1,8 @@
 // One gentle hint at a time; hovering/dragging resets the idle delay.
 export function createDeskDiscovery(random=Math.random){
- let elapsed=0,wait=.9,target=null,last=null;
+ let elapsed=0,wait=.3,target=null,last=null;
  return {
-  reset(){elapsed=0;wait=1.8;target=null;},
+  reset(){elapsed=0;wait=.65;target=null;},
   update(dt,ids){
    if(!ids.length)return null;
    elapsed+=Math.max(0,Math.min(dt,.1));
@@ -13,8 +13,8 @@ export function createDeskDiscovery(random=Math.random){
     elapsed=0;
    }
    if(!ids.includes(target)){target=null;elapsed=0;return null;}
-   if(elapsed>=2.8){last=target;target=null;elapsed=0;wait=1.5+random()*1.5;return null;}
-   return {id:target,amount:Math.sin(Math.PI*elapsed/2.8)**2};
+   if(elapsed>=1.65){last=target;target=null;elapsed=0;wait=.25+random()*.4;return null;}
+   return {id:target,progress:Math.min(1,elapsed/.65),amount:Math.min(1,elapsed/.1)*Math.max(0,Math.min(1,(1.65-elapsed)/.55))};
   }
  };
 }
