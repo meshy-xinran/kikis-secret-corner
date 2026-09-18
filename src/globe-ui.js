@@ -1,3 +1,4 @@
+import {loadMessages,saveMessage} from './message-store.js';
 import * as THREE from 'three';
 export function createGlobeUI({scene,camera,cat,renderer,offerings,deskUI,navigate,rotate,onPlant}){
  const layer=document.createElement('section');layer.className='globe-actions';layer.hidden=true;
@@ -6,10 +7,27 @@ export function createGlobeUI({scene,camera,cat,renderer,offerings,deskUI,naviga
  <button class="cat-invitation">Meet Kiki among the stars <span>↗</span></button>`;
  document.body.append(layer);
  const offer=layer.querySelector('.leave-flowers'),invite=layer.querySelector('.cat-invitation'),tableBack=layer.querySelector('[data-view="focus"]');
- const dialog=document.createElement('dialog');dialog.className='flower-dialog';dialog.innerHTML=`<form><button type="button" class="dialog-close" aria-label="Close">×</button><h2>A little love for Kiki</h2><p>Your words will bloom in her little world.</p><label>Your name or nickname<input name="name" maxlength="24" required placeholder="What should we call you?" autocomplete="given-name"></label><label>Your message<textarea name="message" maxlength="240" required rows="4" placeholder="Leave her a few kind words…"></textarea></label><p class="form-error" role="alert"></p><button class="plant-submit" type="submit">Leave a bouquet ↗</button><small>Demo: your flower stays until you refresh this page.</small></form>`;document.body.append(dialog);
+ const dialog=document.createElement('dialog');dialog.className='flower-dialog';dialog.innerHTML=`<form><button type="button" class="dialog-close" aria-label="Close">×</button><h2>A little love for Kiki</h2><p>Your words will bloom in her little world.</p><label>Your name or nickname<input name="name" maxlength="24" required placeholder="What should we call you?" autocomplete="given-name"></label><label>Your message<textarea name="message" maxlength="240" required rows="4" placeholder="Leave her a few kind words…"></textarea></label><p class="form-error" role="alert"></p><button class="plant-submit" type="submit">Leave a bouquet ↗</button><small>Your name and message will be saved and visible to everyone.</small></form>`;document.body.append(dialog);
  const form=dialog.querySelector('form'),error=dialog.querySelector('.form-error');
  offer.onclick=()=>{error.textContent='';dialog.showModal();};dialog.querySelector('.dialog-close').onclick=()=>dialog.close();
- form.onsubmit=e=>{e.preventDefault();try{const data=new FormData(form);const record=offerings.plant(String(data.get('name')),String(data.get('message')));dialog.close();form.reset();onPlant(record);}catch(err){error.textContent=err.message;}};
+ const submit=form.querySelector('.plant-submit');let saving=false,loaded=false,pending=null;
+ async function load(){if(loaded)return;offerings.hydrate(await loadMessages());loaded=true;}
+ const initialLoad=load().catch(()=>{dialog.querySelector('small').textContent='Saved messages could not load. Open this form again to retry.';});
+ offer.onclick=async()=>{error.textContent='';dialog.showModal();submit.disabled=true;try{await initialLoad;await load();dialog.querySelector('small').textContent='Your name and message will be saved and visible to everyone.';}catch(err){error.textContent=err.message;}finally{submit.disabled=saving;}};
+ form.onsubmit=async e=>{
+  e.preventDefault();if(saving)return;saving=true;submit.disabled=true;submit.textContent='Saving…';error.textContent='';
+  try{
+   await initialLoad;await load();
+   const data=new FormData(form),name=String(data.get('name')).trim(),message=String(data.get('message')).trim();
+   if(!name||!message)throw new Error('Please enter your name and a few words for Kiki.');
+   const signature=JSON.stringify([name,message]);
+   if(!pending||pending.signature!==signature)pending={signature,id:crypto.randomUUID()};
+   const saved=await saveMessage(name,message,pending.id);
+   const record=offerings.addSaved(saved,true);pending=null;dialog.close();form.reset();onPlant(record);
+  }catch(err){error.textContent=err.message;}
+  finally{saving=false;submit.disabled=false;submit.textContent='Leave a bouquet ↗';}
+ };
+
  layer.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>navigate(b.dataset.view));invite.onclick=()=>navigate('inside');
  const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let enabled=false,hoverCat=false,press=null;
  function pick(e){if(!enabled||dialog.open)return false;const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);cat.updateWorldMatrix(true,true);camera.updateMatrixWorld();ray.setFromCamera(pointer,camera);return ray.intersectObject(cat,true).length>0&&!offerings.getHovered();}

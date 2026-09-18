@@ -1,13 +1,13 @@
 # Kiki’s Secret Corner — public demo
 
-A static memorial demo with temporary visitor offerings. The original editing project is separate and unchanged.
+A static memorial website with Supabase-backed visitor offerings. The original editing project is separate and unchanged.
 
 ## Included
 
 - Desk, globe close-up, and inside-the-globe scenes.
-- 29 fixed flowers and the messages visible in the original Chrome demo.
-- Visitors can write a name/message and leave a bouquet, including snow and flower-growth animations. New offerings stay in memory until refresh; they are never sent to a server.
-- No localStorage, backend, API credentials, or generation services.
+- 29 original messages imported into the database during setup.
+- Visitors can write a name/message and leave a bouquet, including snow and flower-growth animations. New offerings are saved to Supabase and loaded on subsequent visits.
+- A public Supabase key connects the guestbook; localStorage holds only an anonymous browser identifier.
 - Comico / Switzer, ambient music loop, rain, hover interactions and camera transitions.
 
 ## Publish with GitHub Desktop (no build required)
@@ -23,12 +23,12 @@ The `docs` folder already contains the built website, including all assets and `
 
 Use Node 22. Run `npm ci`, then `npm run dev` for development.
 After editing, run `npm run build` and commit the updated `docs` folder.
-The app uses no external API keys.
+The app uses a Supabase publishable key; no privileged credentials are included.
 
 ## Files
 
 - `src`, `style.css`, `index.html`: editable website
-- `src/demo-flowers.js`: the fixed demo message snapshot
+- `src/demo-flowers.js`: the original message snapshot shown while loading
 - `public/assets`: only the assets used by these scenes
 - `docs`: ready-to-publish site
 - `ASSET-REPORT.md`: size and optimization notes
@@ -36,4 +36,12 @@ The app uses no external API keys.
 
 ## Scope
 
-This is a desktop-first WebGL demo. Download size is reduced; the sculpture still retains its original triangle count, so lower-end/mobile GPUs may remain slower. Visitor messages are temporary: refreshing restores the original 29 demo flowers.
+This is a desktop-first WebGL demo. Download size is reduced; the sculpture still retains its original triangle count, so lower-end/mobile GPUs may remain slower. The scene loads the latest 200 saved messages.
+
+## Persistent guestbook
+
+Run `supabase/setup.sql` once in the project SQL Editor before deploying this build. It creates the table and restricted RPC, enables RLS, and imports the original 29 demo messages. All messages are immediately public. Visitors can read only public fields and submit through the validated function; they cannot directly insert, edit, or delete records.
+
+Manage messages in Supabase Table Editor → kiki_messages. Deletions appear after a page reload. The scene loads the latest 200 messages; older messages remain in the database. New submissions are confirmed by the server before the growth animation. A request ID protects against duplicate retries. The 30-second cooldown is per browser identifier and is only a lightweight deterrent; determined spam needs a server-verified CAPTCHA/rate limiter. No database password or secret/service-role key is included.
+
+Database setup verified: original 29 messages readable, private fields protected, empty input rejected, duplicate retry returns the existing record, and visitor edits/deletes denied. A new-message browser submission should be checked after deployment.

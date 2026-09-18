@@ -140,9 +140,12 @@ function updateMessageSky(t){
  messageSky.hidden=!!offeringShot||globeUI.catHovered||globeUI.blocked||!!travel||(!inside&&!(reading&&hover));
  if(messageSky.hidden)return;
  globe.updateWorldMatrix(true,false);camera.updateMatrixWorld();
- for(const rec of offerings.getRecords().filter(r=>r.message)){
+ const visibleRecords=offerings.getRecords().filter(r=>r.message);
+ for(const [id,node] of messageNodes){if(!visibleRecords.some(r=>r.id===id)){node.remove();messageNodes.delete(id);}}
+ for(const rec of visibleRecords){
   let node=messageNodes.get(rec.id);
   if(!node){node=document.createElement('span');node.className='flower-message';node.dataset.flowerId=rec.id;const author=document.createElement('strong');author.className='message-author';author.textContent=rec.name;const words=document.createElement('span');words.textContent=rec.message;node.append(author,words);messageSky.append(node);messageNodes.set(rec.id,node);}
+  node.querySelector('.message-author').textContent=rec.name;node.lastElementChild.textContent=rec.message;
   node.classList.toggle('closeup-message',!inside);
   if(!inside){
    node.hidden=hover?.id!==rec.id;
