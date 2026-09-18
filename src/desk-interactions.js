@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createDeskDiscovery} from './desk-discovery.js';
 import {OutlinePass} from 'three/addons/postprocessing/OutlinePass.js';
 
 export const memories={
@@ -31,8 +32,9 @@ export function createDeskInteractions({scene,camera,composer,globe,glass,render
  aura.position.copy(glass.position);aura.scale.setScalar(1.006);aura.renderOrder=13;globe.add(aura);
  const innerLight=new THREE.PointLight('#d9edac',0,5,2);innerLight.position.set(0,2.2,1.1);globe.add(innerLight);
  const ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),sphere=new THREE.Sphere(),center=new THREE.Vector3(),hitPoint=new THREE.Vector3();
- let hovered=null,enabled=false,amount=0;
- function clear(){hovered=null;outline.selectedObjects=[];caption.classList.remove('visible');renderer.domElement.style.cursor='';}
+ const discovery=createDeskDiscovery(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+ let hovered=null,enabled=false,amount=0,hintGlow=0;
+ function clear(){discovery.reset();hovered=null;outline.selectedObjects=[];caption.classList.remove('visible');renderer.domElement.style.cursor='';}
  function pick(e){
   if(!enabled)return null;
   const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);
@@ -47,6 +49,7 @@ export function createDeskInteractions({scene,camera,composer,globe,glass,render
   if(!id||!memories[id]){clear();return null;}
   if(hovered!==id){hovered=id;caption.classList.toggle('globe-invitation',id==='globe');captionName.textContent=id==='globe'?'':memories[id][0];captionStory.textContent=memories[id][1];caption.classList.add('visible');}
   outline.selectedObjects=id==='globe'?[glass]:[root];outline.edgeStrength=id==='globe'?5:3;
+  discovery.reset();outline.edgeGlow=.7;outline.edgeThickness=1.5;
   renderer.domElement.style.cursor=id==='globe'?'pointer':'default';
   return id;
  }
@@ -57,9 +60,23 @@ export function createDeskInteractions({scene,camera,composer,globe,glass,render
  renderer.domElement.addEventListener('pointerup',e=>{if(press?.id==='globe'&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<6&&enabled){clear();onEnter();}press=null;});
  renderer.domElement.addEventListener('pointercancel',()=>{press=null;clear();});
  return {setFocusOutline(object,color){outline.selectedObjects=object?[object]:[];outline.visibleEdgeColor.set(color||'#c3e890');outline.hiddenEdgeColor.set(color||'#c3e890');outline.edgeGlow=1.1;outline.edgeStrength=4.5;},update(dt,isDesk){
-  if(enabled&&!isDesk)clear();enabled=isDesk;if(isDesk){outline.visibleEdgeColor.set('#d6eca0');outline.hiddenEdgeColor.set('#000000');}dates.hidden=!isDesk;title.classList.toggle('hidden',!isDesk);title.setAttribute('aria-hidden',String(!isDesk));caption.hidden=!isDesk;
+  if(enabled&&!isDesk)clear();enabled=isDesk;hintGlow=0;
+  if(isDesk){
+   outline.visibleEdgeColor.set('#d6eca0');outline.hiddenEdgeColor.set('#000000');
+   if(!hovered){
+    const roots=scene.children.filter(o=>o.visible&&memories[o.userData.memoryKey]);
+    const ids=roots.map(o=>o.userData.memoryKey);
+    if(!ids.includes('globe'))ids.push('globe');
+    const cue=press?null:reducedMotion.matches?{id:'globe',amount:.3}:discovery.update(dt,ids);
+    const object=cue?.id==='globe'?glass:roots.find(o=>o.userData.memoryKey===cue?.id);
+    outline.selectedObjects=object?[object]:[];
+    outline.edgeStrength=cue?cue.amount*3.2:0;outline.edgeGlow=.75;outline.edgeThickness=1.5;
+    if(cue?.id==='globe')hintGlow=cue.amount*.5;
+   }
+  }
+  dates.hidden=!isDesk;title.classList.toggle('hidden',!isDesk);title.setAttribute('aria-hidden',String(!isDesk));caption.hidden=!isDesk;
   amount=THREE.MathUtils.damp(amount,isDesk&&hovered==='globe'?1:0,2.4,dt);
-  glow.value=amount;aura.visible=amount>.001;innerLight.intensity=amount*1.3;
+  glow.value=Math.max(amount,hintGlow);aura.visible=glow.value>.001;innerLight.intensity=amount*1.3;
   backdrops.setOvercast(amount);return amount;
  }};
 }
